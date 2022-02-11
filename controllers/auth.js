@@ -34,7 +34,7 @@ export const login = async (req, res) => {
 
 
         if(passwordOk) {
-           const token = jwt.sign({_id: user._id}, process.env.JWT_SECRET, {expiresIn:'5m'})
+           const token = jwt.sign({_id: user._id}, process.env.JWT_SECRET, {expiresIn:'1h'})
             user.password= undefined
             res.cookie('token', token, {httpOnly: true})
             res.send(user)}else {
