@@ -3,6 +3,7 @@ import {readFileSync} from 'fs'
 import {nanoid} from 'nanoid'
 import Video from '../models/video'
 
+
 const awsConfig = {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -28,7 +29,7 @@ export const uploadVideo = async (req, res) => {
           console.log('Err', err)
           res.status(400).send('Upload failed')
       }
-      console.log(data)
+    //   console.log(data)
       res.send(data)
   })
 }
@@ -39,7 +40,7 @@ export const videoSave =async (req, res) => {
     const {video, title, description} = req.body
 //    console.log('req.body =>',req.body)
    try {
-    const savedVideo =await new Video({video, title, description}).save()
+    const savedVideo =await new Video({video, title, description, author: req.user._id}).save()
 
     return res.send('OK')
 
@@ -47,3 +48,49 @@ export const videoSave =async (req, res) => {
           return res.status(400).send(error)       
    }
 }
+
+export const userVideos = async (req, res) => {
+    try {
+        const videos = await Video.find({author: req.user._id}).exec()
+       res.send(videos)
+        
+    } catch (error) {
+        console.log(error)
+        res.sendStatus(400)
+    }
+}
+
+export const videoRemove= async (req, res) => {
+    try {
+        await Video.findByIdAndRemove(req.body._id).exec()
+         const params = {
+             Bucket: req.body.video.Bucket,
+             Key: req.body.video.Key
+         }
+         S3.deleteObject(params, (err, data) => {
+             if(err) {
+                 console.log(err)
+                 res.sendStatus(400)
+             }
+             res.send({ok: true})
+         })
+    } catch (error) {
+        console.log(error)
+        res.send('Video remove failed')
+    }
+}
+
+export const singleVideo = async (req, res) => {
+    try {
+        const {id} = req.params
+        const video = await Video.findById(id).exec()
+        console.log('video', video)
+        res.json(video)
+    } catch (error) {
+        console.log(error)
+        res.send('Error single video ')
+    }
+}
+
+
+
