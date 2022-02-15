@@ -84,7 +84,6 @@ export const singleVideo = async (req, res) => {
     try {
         const {id} = req.params
         const video = await Video.findById(id).exec()
-        console.log('video', video)
         res.json(video)
     } catch (error) {
         console.log(error)
@@ -94,3 +93,12 @@ export const singleVideo = async (req, res) => {
 
 
 
+export const allVideos = async (req, res) => {
+    try {
+        const all = await Video.find({}).exec()
+        res.json(all)
+    } catch (error) {
+        console.log(error)
+        return res.sendStatus(400)
+    }
+}
