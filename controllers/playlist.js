@@ -55,3 +55,25 @@ export const addVideosToPlaylist = async (req, res) => {
     res.status(400).send(error);
   }
 };
+
+ export const updatePlaylist = async (req, res) => {
+   try {
+     const {playlist, id} = req.body
+     await Playlist.findByIdAndUpdate(id, {videos: playlist}).exec()
+     res.send({ok: true})
+   } catch (error) {
+     res.status(400).send(error)
+   }
+ }
+
+ export const deleteVideoFromPlaylist = async (req, res) => {
+   try {
+     const {playlist, video} = req.params
+     const updatedPlaylist = await Playlist.findByIdAndUpdate(playlist, {
+       $pull: {videos: video}
+     }).exec()
+     res.send(updatedPlaylist)
+   } catch (error) {
+     res.status(400).send(error)
+   }
+ }
