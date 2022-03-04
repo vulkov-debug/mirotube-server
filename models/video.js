@@ -13,10 +13,10 @@ const videoSchema = new Schema({
     },
     author: {
         type: ObjectId,
-        ref: 'user'
+        ref: 'User'
     },
     tags: [],
-    viewCount: {type: Number}
+    viewCount: {type: Number, default:0}
 }, {timestamps: true})
 
 export default mongoose.model('Video', videoSchema)

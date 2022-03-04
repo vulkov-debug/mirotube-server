@@ -35,7 +35,7 @@ export const uploadVideo = async (req, res) => {
 
 export const videoSave = async (req, res) => {
   // console.log('req body', req.body)
-  const { video, title, description } = req.body;
+  const { video, title, description, tags } = req.body;
   //    console.log('req.body =>',req.body)
   try {
     const savedVideo = await new Video({
@@ -43,6 +43,7 @@ export const videoSave = async (req, res) => {
       title,
       description,
       author: req.user._id,
+      tags,
     }).save();
 
     return res.send("OK");
@@ -104,10 +105,8 @@ export const allVideos = async (req, res) => {
 
 export const videoEdit = async (req, res) => {
   try {
-   
     const { video } = req.files;
 
-  
     if (!video) return res.status(400).send("No video");
 
     const params = {
@@ -116,34 +115,59 @@ export const videoEdit = async (req, res) => {
       Body: readFileSync(video.path),
       ContentType: video.type,
     };
-  
-   S3.upload(params, (err, data) => {
+
+    S3.upload(params, (err, data) => {
       if (err) {
         console.log("Err", err);
         res.status(400).send("Upload failed");
       }
-    //  const updatedVideo = Video.findByIdAndUpdate(id, data, {new: true}).exec()     
+      //  const updatedVideo = Video.findByIdAndUpdate(id, data, {new: true}).exec()
       res.send(data);
     });
-  
   } catch (error) {
-    res.status(400).send(error)      
+    res.status(400).send(error);
   }
-
 };
-
 
 export const videoEditSubmit = async (req, res) => {
   try {
-    const {id} = req.params
-  const {title, description, video} = req.body
+    const { id } = req.params;
+    const { title, description, video, tags } = req.body;
 
-  const videoToBeUpdated = await Video.findByIdAndUpdate(id, {title, description, video}).exec()
+    const videoToBeUpdated = await Video.findByIdAndUpdate(id, {
+      title,
+      description,
+      video,
+      tags,
+    }).exec();
 
-  res.send({ok:true})
+    res.send({ ok: true });
+  } catch (error) {
+    res.status(400).send(error);
+  }
+};
+
+export const getVideosByTag = async (req, res) => {
+  try {
+    const videosWithSelectedTags = [];
+
+    for (let i = 0; i < req.body.length; i++) {
+      const videos = await Video.find({ tags: req.body[i] });
+      videosWithSelectedTags.push(videos);
+    }
+
+    res.send(videosWithSelectedTags[0]);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+};
+
+
+export const incrementViewsCount = async (req, res) => {
+  try {
+    const {id} = req.body
+    
   } catch (error) {
     res.status(400).send(error)
   }
-
-
 }
