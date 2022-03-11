@@ -1,6 +1,5 @@
 import User from "../models/user";
 import Video from '../models/video'
-import bcrypt from "bcrypt";
 import { hashPassword, comparePassword } from "../utils/auth";
 import jwt from "jsonwebtoken";
 
@@ -98,3 +97,16 @@ export const incrementViewsCount = async (req, res) => {
     res.status(400).send(error);
   }
 };
+
+
+export const editUser = async (req, res) => {
+  try {
+    const {volume} = req.body
+    console.log('volume',volume)
+  await User.findByIdAndUpdate(req.user._id, {volume}).exec()
+  res.send({ok:true})
+
+  } catch (error) {
+    res.status(400).send(error)
+  }
+}

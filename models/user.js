@@ -23,6 +23,7 @@ const userSchema = new Schema(
     watched_videos: [
       { video_id: {type: ObjectId, ref: "Video"}, count: {type:Number, default: 1} },
     ],
+    volume: {type: String, default: 0.5}
   },
   { timestamps: true }
 );

@@ -54,8 +54,10 @@ export const videoSave = async (req, res) => {
 
 export const userVideos = async (req, res) => {
   try {
-    const videos = await Video.find({ author: req.user._id }).exec();
-    res.send(videos);
+    const {skip} = req.params
+    const videos = await Video.find({ author: req.user._id }).skip(skip).limit(20).exec();
+    const count = await Video.find({author: req.user._id}).count().exec()
+    res.send({videos, count});
   } catch (error) {
     console.log(error);
     res.sendStatus(400);
@@ -85,7 +87,7 @@ export const videoRemove = async (req, res) => {
 export const singleVideo = async (req, res) => {
   try {
     const { id } = req.params;
-    const video = await Video.findById(id).exec();
+    const video = await Video.findById(id).populate('author', '-password').exec();
     res.json(video);
   } catch (error) {
     console.log(error);
@@ -94,9 +96,11 @@ export const singleVideo = async (req, res) => {
 };
 
 export const allVideos = async (req, res) => {
+  const {skip} = req.params
   try {
-    const all = await Video.find({}).exec();
-    res.json(all);
+    const count = await Video.count().exec()
+    const all = await Video.find({}).skip(skip).limit(20).exec();
+    res.json({all, count});
   } catch (error) {
     console.log(error);
     return res.sendStatus(400);
@@ -167,6 +171,17 @@ export const incrementViewsCount = async (req, res) => {
   try {
     const {id} = req.body
     
+  } catch (error) {
+    res.status(400).send(error)
+  }
+}
+
+export const popularVideos = async (req, res) => {
+  try {
+    const {skip} = req.params
+    const videos = await Video.find({}).sort({viewCount: -1}).skip(skip).limit(20).exec()
+    const count = await Video.find().count().exec()
+    res.send({videos, count})
   } catch (error) {
     res.status(400).send(error)
   }
