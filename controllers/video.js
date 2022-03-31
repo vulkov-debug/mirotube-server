@@ -2,6 +2,7 @@ import AWS from "aws-sdk";
 import { readFileSync } from "fs";
 import { nanoid } from "nanoid";
 import Video from "../models/video";
+import User from "../models/user";
 
 const awsConfig = {
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -54,10 +55,13 @@ export const videoSave = async (req, res) => {
 
 export const userVideos = async (req, res) => {
   try {
-    const {skip} = req.params
-    const videos = await Video.find({ author: req.user._id }).skip(skip).limit(20).exec();
-    const count = await Video.find({author: req.user._id}).count().exec()
-    res.send({videos, count});
+    const { skip } = req.params;
+    const videos = await Video.find({ author: req.user._id })
+      .skip(skip)
+      .limit(20)
+      .exec();
+    const count = await Video.find({ author: req.user._id }).count().exec();
+    res.send({ videos, count });
   } catch (error) {
     console.log(error);
     res.sendStatus(400);
@@ -87,7 +91,9 @@ export const videoRemove = async (req, res) => {
 export const singleVideo = async (req, res) => {
   try {
     const { id } = req.params;
-    const video = await Video.findById(id).populate('author', '-password').exec();
+    const video = await Video.findById(id)
+      .populate("author", "-password")
+      .exec();
     res.json(video);
   } catch (error) {
     console.log(error);
@@ -96,11 +102,11 @@ export const singleVideo = async (req, res) => {
 };
 
 export const allVideos = async (req, res) => {
-  const {skip} = req.params
+  const { skip } = req.params;
   try {
-    const count = await Video.count().exec()
+    const count = await Video.count().exec();
     const all = await Video.find({}).skip(skip).limit(20).exec();
-    res.json({all, count});
+    res.json({ all, count });
   } catch (error) {
     console.log(error);
     return res.sendStatus(400);
@@ -166,23 +172,132 @@ export const getVideosByTag = async (req, res) => {
   }
 };
 
-
 export const incrementViewsCount = async (req, res) => {
   try {
-    const {id} = req.body
-    
+    const { id } = req.body;
   } catch (error) {
-    res.status(400).send(error)
+    res.status(400).send(error);
   }
-}
+};
 
 export const popularVideos = async (req, res) => {
   try {
-    const {skip} = req.params
-    const videos = await Video.find({}).sort({viewCount: -1}).skip(skip).limit(20).exec()
-    const count = await Video.find().count().exec()
-    res.send({videos, count})
+    const { skip } = req.params;
+    const videos = await Video.find({})
+      .sort({ viewCount: -1 })
+      .skip(skip)
+      .limit(20)
+      .exec();
+    const count = await Video.find().count().exec();
+    res.send({ videos, count });
   } catch (error) {
-    res.status(400).send(error)
+    res.status(400).send(error);
+  }
+};
+
+export const search = async (req, res) => {
+  try {
+    const { query } = req.params;
+    const results = await Video.find({
+      title: { $regex: query, $options: "i" },
+    }).limit(10);
+    res.send(results);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+};
+
+export const writeHistory = async (req, res) => {
+  try {
+    const { search } = req.body;
+    await User.updateOne(
+      { _id: req.user._id },
+      { $addToSet: { search_history: { title: search } } }
+    ).exec();
+    res.send({ ok: true });
+  } catch (error) {
+    res.status(400).send(error);
+  }
+};
+
+export const deleteSearch = async (req, res) => {
+  try {
+    const { title } = req.body;
+    await User.findByIdAndUpdate(req.user._id, {
+      $pull: {
+        search_history: { title },
+      },
+    });
+    res.send({ ok: true });
+  } catch (error) {
+    res.status(400).send(error);
+  }
+};
+
+export const newest = async (req, res) => {
+  try {
+    const { skip } = req.params;
+    const videos = await Video.find({})
+      .skip(skip)
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .exec();
+    const count = await Video.count().exec();
+    res.send({ videos, count });
+  } catch (error) {
+    res.send(error);
+  }
+};
+
+export const rateVideo = async (req, res) => {
+  try {
+    const { videoId, rate } = req.body;
+    console.log("videoId", videoId);
+    console.log("rate", rate);
+    const video = await Video.findById(videoId).exec()
+    const alreadyVoted = video.voted.some((item) => item.user == req.user._id);
+    console.log('voted', alreadyVoted)
+    if (alreadyVoted) {
+      await Video.updateOne(
+        {_id:video._id},
+        { $set: {"voted.$[u].rate": rate} },
+        {arrayFilters: [{"u.user": req.user._id}]}
+      ).exec()
+    } else {
+      await Video.findByIdAndUpdate(
+        video._id,
+        { $push: { voted: { user: req.user._id, rate} } },
+        { new: true }
+      ).exec();
+    }
+
+    res.send({ok:true});
+  } catch (error) {
+    res.send(error);
+  }
+};
+
+
+export const rateSave = async (req, res) => {
+  try {
+    const {rate, videoId} = req.body
+ await Video.findByIdAndUpdate(videoId, {rate})
+  } catch (error) {
+    res.send(error)
+  } 
+}
+
+export const highestRated = async (req, res) => {
+  try {
+    const { skip } = req.params;
+    const videos = await Video.find({})
+      .skip(skip)
+      .sort({ rate: -1 })
+      .limit(20)
+      .exec();
+    const count = await Video.count().exec();
+    res.send({ videos, count });
+  } catch (error) {
+    res.send(error);
   }
 }

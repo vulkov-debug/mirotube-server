@@ -3,6 +3,11 @@ const { Schema } = mongoose;
 
 const { ObjectId } = Schema;
 
+const searchSchema = new Schema({
+   title: String,
+   _id: false  
+})
+
 const userSchema = new Schema(
   {
     name: {
@@ -21,9 +26,13 @@ const userSchema = new Schema(
       required: true,
     },
     watched_videos: [
-      { video_id: {type: ObjectId, ref: "Video"}, count: {type:Number, default: 1} },
+      {
+        video_id: { type: ObjectId, ref: "Video" },
+        count: { type: Number, default: 1 },
+      },
     ],
-    volume: {type: String, default: 0.5}
+    volume: { type: String, default: 0.5 },
+    search_history: [searchSchema],
   },
   { timestamps: true }
 );
